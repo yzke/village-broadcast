@@ -107,17 +107,27 @@ POST /api/stream/refresh-key - 刷新推流密钥 (管理员)
 ### Socket.io 事件
 ```
 客户端发送:
-  join_room    - 加入房间
-  leave_room   - 离开房间
-  send_danmaku - 发送弹幕
-  check_stream - 检查直播状态
+  join_room    - 加入房间: { roomId: string }
+  leave_room   - 离开房间: { roomId: string }
+  send_danmaku - 发送弹幕: { roomId: string, text: string, styleId: string }
+  check_stream - 检查直播状态: { roomId: string }
 
 服务端发送:
-  stream_status  - 直播状态
-  danmaku_list   - 弹幕列表
-  new_danmaku    - 新弹幕
-  online_count   - 在线人数
+  stream_status  - 直播状态: { isLive: boolean, viewerCount: number, ... }
+  danmaku_list   - 弹幕列表: Danmaku[]
+  new_danmaku    - 新弹幕: { id: string, text: string, styleId: string, user: {...}, timestamp: number }
+  online_count   - 在线人数: { count: number }
 ```
+
+**弹幕样式 (styleId)**:
+- `normal` - 普通白色弹幕
+- `warm` - 温暖橙色
+- `fire` - 烈焰红色
+- `ocean` - 海洋蓝色
+- `forest` - 森林绿色
+- `royal` - 皇家紫色
+
+后端只需转发 `styleId`，样式配置完全由前端管理。
 
 ---
 
