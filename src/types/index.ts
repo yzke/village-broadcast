@@ -12,6 +12,28 @@ export interface User {
   avatar?: string;
 }
 
+// ============================================================
+// 在线用户类型（可扩展）
+// ============================================================
+
+export interface OnlineUser extends User {
+  socketId: string;
+  joinedAt: number;
+  lastActivity: number;
+  isActive: boolean;
+  metadata?: {
+    danmakuCount?: number;
+    watchTime?: number;
+    [key: string]: unknown; // 允许扩展
+  };
+}
+
+export interface OnlineUsersData {
+  users: OnlineUser[];
+  count: number;
+  timestamp: number;
+}
+
 export interface LoginRequest {
   username: string;
   password: string;

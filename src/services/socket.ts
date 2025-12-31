@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client';
-import type { SocketEvents, Danmaku, StreamStatus } from '../types';
+import type { SocketEvents, Danmaku, StreamStatus, OnlineUsersData, OnlineUser } from '../types';
 import { API_CONFIG } from './api';
 
 // ============================================================
@@ -138,11 +138,46 @@ class SocketService {
   }
 
   /**
-   * 监听在线人数
+   * 监听在线人数（已废弃，使用 onOnlineUsers）
    */
   onOnlineCount(callback: (count: number) => void): () => void {
     this.socket?.on('online_count', ({ count }) => callback(count));
     return () => this.socket?.off('online_count', callback);
+  }
+
+  // ============================================================
+  // 在线用户事件监听（可扩展）
+  // ============================================================
+
+  /**
+   * 监听在线用户列表更新（完整列表）
+   */
+  onOnlineUsers(callback: (data: OnlineUsersData) => void): () => void {
+    this.socket?.on('online_users', callback);
+    return () => this.socket?.off('online_users', callback);
+  }
+
+  /**
+   * 监听用户上线
+   */
+  onUserOnline(callback: (data: { user: OnlineUser; timestamp: number }) => void): () => void {
+    this.socket?.on('user_online', callback);
+    return () => this.socket?.off('user_online', callback);
+  }
+
+  /**
+   * 监听用户下线
+   */
+  onUserOffline(callback: (data: { userId: string; timestamp: number }) => void): () => void {
+    this.socket?.on('user_offline', callback);
+    return () => this.socket?.off('user_offline', callback);
+  }
+
+  /**
+   * 发送活跃状态（心跳）
+   */
+  sendActivity(): void {
+    this.socket?.emit('activity');
   }
 
   /**

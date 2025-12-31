@@ -6,6 +6,7 @@ import { checkStreamAvailable, getHlsUrl } from '../../services/api';
 import VideoPlayer from '../../components/VideoPlayer';
 import DanmakuLayer from '../../components/Danmaku';
 import ChatInput from '../../components/ChatInput';
+import { OnlineUsersDisplay } from '../../components/OnlineUsers';
 
 const ROOM_ID = 'live';
 
@@ -106,6 +107,12 @@ export default function LivePage() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* 在线用户显示 */}
+            <OnlineUsersDisplay
+              roomId={ROOM_ID}
+              config={{ mode: 'count', showActivity: true }}
+            />
+
             {/* 用户信息 - 可点击进入个人中心 */}
             <button
               onClick={() => user?.role !== 'guest' && navigate('/profile')}
@@ -204,14 +211,12 @@ export default function LivePage() {
                     <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
                     <span className="text-sm text-gray-300">直播中</span>
                   </div>
-                  {viewerCount > 0 && (
-                    <div className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 rounded-xl">
-                      <svg className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
-                      </svg>
-                      <span className="text-sm text-gray-300">{viewerCount} 人在线</span>
-                    </div>
-                  )}
+
+                  {/* 在线用户头像显示 */}
+                  <OnlineUsersDisplay
+                    roomId={ROOM_ID}
+                    config={{ mode: 'avatars', maxDisplay: 5, showRole: false, showActivity: true }}
+                  />
                 </div>
 
                 <button

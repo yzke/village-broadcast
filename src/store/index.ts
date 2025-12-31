@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { User, Danmaku, StreamStatus } from '../types';
+import type { User, Danmaku, StreamStatus, OnlineUser } from '../types';
 
 // ============================================================
 // 用户 Store
@@ -75,6 +75,75 @@ export const useStreamStore = create<StreamState>((set) => ({
       streamName: 'live',
       startedAt: null,
     }),
+}));
+
+// ============================================================
+// 在线用户 Store（可扩展）
+// ============================================================
+
+interface OnlineUsersState {
+  onlineUsers: OnlineUser[];
+  userMap: Map<string, OnlineUser>; // userId -> OnlineUser
+  lastUpdate: number;
+
+  setOnlineUsers: (users: OnlineUser[]) => void;
+  addUser: (user: OnlineUser) => void;
+  removeUser: (userId: string) => void;
+  clearOnlineUsers: () => void;
+  getUserById: (userId: string) => OnlineUser | undefined;
+  getOnlineCount: () => number;
+  getActiveUsers: () => OnlineUser[];
+}
+
+export const useOnlineUsersStore = create<OnlineUsersState>((set, get) => ({
+  onlineUsers: [],
+  userMap: new Map(),
+  lastUpdate: 0,
+
+  setOnlineUsers: (users) => {
+    const userMap = new Map(users.map((u) => [u.id, u]));
+    set({ onlineUsers: users, userMap, lastUpdate: Date.now() });
+  },
+
+  addUser: (user) => {
+    set((state) => {
+      const newUserMap = new Map(state.userMap);
+      newUserMap.set(user.id, user);
+      return {
+        userMap: newUserMap,
+        onlineUsers: Array.from(newUserMap.values()),
+        lastUpdate: Date.now(),
+      };
+    });
+  },
+
+  removeUser: (userId) => {
+    set((state) => {
+      const newUserMap = new Map(state.userMap);
+      newUserMap.delete(userId);
+      return {
+        userMap: newUserMap,
+        onlineUsers: Array.from(newUserMap.values()),
+        lastUpdate: Date.now(),
+      };
+    });
+  },
+
+  clearOnlineUsers: () => {
+    set({ onlineUsers: [], userMap: new Map(), lastUpdate: Date.now() });
+  },
+
+  getUserById: (userId) => {
+    return get().userMap.get(userId);
+  },
+
+  getOnlineCount: () => {
+    return get().onlineUsers.length;
+  },
+
+  getActiveUsers: () => {
+    return get().onlineUsers.filter((u) => u.isActive);
+  },
 }));
 
 // ============================================================
