@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'motion/react';
 import { login, register } from '../../services/api';
 import { useUserStore } from '../../store';
 
@@ -13,6 +14,10 @@ export default function LoginPage() {
   const [nickname, setNickname] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // 云纹密码显示的遮罩字符串
+  const cloudChar = '≋'; // 波浪虚线符号，类似云纹
+  const passwordDisplay = password ? cloudChar.repeat(password.length) : '';
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -117,8 +122,22 @@ export default function LoginPage() {
       </div>
 
       <div className="relative w-full max-w-md px-4 z-10">
-        {/* 文牒主体 */}
-        <div className="relative">
+        {/* 文牒主体 - 带展开动画 */}
+        <motion.div
+          className="relative"
+          initial={{
+            scaleY: 0,
+            opacity: 0,
+          }}
+          animate={{
+            scaleY: 1,
+            opacity: 1,
+          }}
+          transition={{
+            duration: 1.5,
+            ease: [0.6, 0.01, 0.2, 0.02], // 先慢后快，最后突然展开
+          }}
+        >
           {/* 外层墨色边框 */}
           <div className="absolute inset-0 border-4 border-[#2d2d2d] rounded-lg"></div>
           <div className="absolute inset-1 border-2 border-[#4a4a4a] rounded-lg"></div>
@@ -165,9 +184,9 @@ export default function LoginPage() {
 
             {/* 内容区域 */}
             <div className="relative p-8">
-              {/* 右侧朱红印章装饰 */}
-              <div className="absolute top-4 right-4 w-16 h-16 opacity-25 pointer-events-none">
-                <svg viewBox="0 0 100 100" className="w-full h-full">
+              {/* 右侧朱红印章装饰 - 带发光效果 */}
+              <div className="absolute top-4 right-4 w-16 h-16 opacity-30 pointer-events-none seal-glow">
+                <svg viewBox="0 0 100 100" className="w-full h-full seal-svg">
                   <rect x="5" y="5" width="90" height="90" fill="none" stroke="#c41e3a" strokeWidth="3" rx="4" />
                   <rect x="12" y="12" width="76" height="76" fill="none" stroke="#c41e3a" strokeWidth="2" rx="2" />
                   <text x="50" y="40" textAnchor="middle" fill="#c41e3a" fontSize="20" fontWeight="bold" style={{ fontFamily: '"KaiTi", "STKaiti", "楷体", serif' }}>大明</text>
@@ -244,15 +263,25 @@ export default function LoginPage() {
                     <span className="text-[#c41e3a] mr-1">◆</span>入阁暗号
                   </label>
                   <div className="relative">
+                    {/* 真实输入框 - 透明 */}
                     <input
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-4 py-3 bg-white border-2 border-[#d0d0d0] rounded focus:outline-none focus:border-[#4a4a4a] transition-all text-[#2d2d2d] placeholder-[#9a9a9a]"
-                      placeholder="请输入暗号"
+                      className="absolute inset-0 w-full h-full px-4 py-3 opacity-0 cursor-text z-10"
                       required
+                    />
+                    {/* 云纹显示层 - 只读 */}
+                    <input
+                      type="text"
+                      value={passwordDisplay}
+                      readOnly
+                      className="w-full px-4 py-3 bg-white border-2 border-[#d0d0d0] rounded transition-all text-[#2d2d2d] placeholder-[#9a9a9a] pointer-events-none"
+                      placeholder="请输入暗号"
                       style={{
-                        fontFamily: '"KaiTi", "STKaiti", "楷体", serif'
+                        fontFamily: '"KaiTi", "STKaiti", "楷体", serif',
+                        letterSpacing: '0.3em',
+                        color: password ? '#4a4a4a' : '#9a9a9a',
                       }}
                     />
                     {/* 右侧锁图标 */}
@@ -401,7 +430,7 @@ export default function LoginPage() {
               </p>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* 底部落款 */}
         <div className="mt-6 text-center">
@@ -613,6 +642,42 @@ export default function LoginPage() {
           100% {
             transform: translateY(110vh) rotate(540deg) translateX(10px);
             opacity: 0;
+          }
+        }
+
+        /* 印章发光效果 */
+        .seal-glow {
+          animation: sealPulse 3s ease-in-out infinite;
+        }
+
+        .seal-svg {
+          filter: drop-shadow(0 0 8px rgba(196, 30, 58, 0.6))
+                  drop-shadow(0 0 16px rgba(196, 30, 58, 0.4))
+                  drop-shadow(0 0 24px rgba(196, 30, 58, 0.2));
+          animation: svgGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes sealPulse {
+          0%, 100% {
+            opacity: 0.25;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.5;
+            transform: scale(1.05);
+          }
+        }
+
+        @keyframes svgGlow {
+          0%, 100% {
+            filter: drop-shadow(0 0 8px rgba(196, 30, 58, 0.6))
+                    drop-shadow(0 0 16px rgba(196, 30, 58, 0.4))
+                    drop-shadow(0 0 24px rgba(196, 30, 58, 0.2));
+          }
+          50% {
+            filter: drop-shadow(0 0 12px rgba(196, 30, 58, 0.8))
+                    drop-shadow(0 0 24px rgba(196, 30, 58, 0.5))
+                    drop-shadow(0 0 36px rgba(196, 30, 58, 0.3));
           }
         }
       `}</style>
