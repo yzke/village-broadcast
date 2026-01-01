@@ -26,6 +26,7 @@ dist-ssr
 
 tmp/
 Makefile
+backend/data/
 
 # Environment variables
 .env.production

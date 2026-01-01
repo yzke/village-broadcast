@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import Hls from 'hls.js';
 
 interface VideoPlayerProps {
@@ -15,8 +15,10 @@ export default function VideoPlayer({
   muted = true
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     // 如果没有直播流，不尝试加载
@@ -93,6 +95,32 @@ export default function VideoPlayer({
     }
   }, [hlsUrl, hasStream, autoPlay]);
 
+  // 全屏状态监听
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  // 切换全屏
+  const toggleFullscreen = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    if (!isFullscreen) {
+      container.requestFullscreen().catch((err) => {
+        console.error('全屏失败:', err);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  }, [isFullscreen]);
+
   const togglePlay = () => {
     const video = videoRef.current;
     if (!video) return;
@@ -110,7 +138,7 @@ export default function VideoPlayer({
   // 无流状态 - 显示占位符
   if (!hasStream) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-slate-900">
+      <div ref={containerRef} className="w-full h-full flex items-center justify-center bg-slate-900">
         {/* 不需要渲染任何内容，因为 Live 页面已经覆盖了未开播提示 */}
         <video
           ref={videoRef}
@@ -123,7 +151,7 @@ export default function VideoPlayer({
   }
 
   return (
-    <div className="relative w-full h-full">
+    <div ref={containerRef} className="relative w-full h-full group">
       <video
         ref={videoRef}
         className="w-full h-full"
@@ -143,26 +171,63 @@ export default function VideoPlayer({
         </div>
       )}
 
-      {/* 播放/暂停按钮 */}
-      {hasStream && (
-        <button
-          onClick={togglePlay}
-          className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
-          aria-label={isPlaying ? '暂停' : '播放'}
-        >
-          <div className="bg-black bg-opacity-50 rounded-full p-4">
+      {/* 播放/暂停按钮（悬停显示） */}
+      <button
+        onClick={togglePlay}
+        className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+        aria-label={isPlaying ? '暂停' : '播放'}
+      >
+        <div className="bg-black/50 rounded-full p-4 backdrop-blur-sm">
+          {isPlaying ? (
+            <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+            </svg>
+          ) : (
+            <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          )}
+        </div>
+      </button>
+
+      {/* 控制栏（底部） */}
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center justify-between">
+          {/* 播放/暂停按钮 */}
+          <button
+            onClick={togglePlay}
+            className="text-white hover:text-amber-400 transition-colors"
+            aria-label={isPlaying ? '暂停' : '播放'}
+          >
             {isPlaying ? (
-              <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
               </svg>
             ) : (
-              <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z" />
               </svg>
             )}
-          </div>
-        </button>
-      )}
+          </button>
+
+          {/* 全屏按钮 */}
+          <button
+            onClick={toggleFullscreen}
+            className="text-white hover:text-amber-400 transition-colors"
+            aria-label={isFullscreen ? '退出全屏' : '全屏'}
+          >
+            {isFullscreen ? (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+              </svg>
+            )}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

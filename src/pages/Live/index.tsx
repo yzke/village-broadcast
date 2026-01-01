@@ -199,7 +199,7 @@ export default function LivePage() {
 
             {/* 未开播提示 */}
             {!hasStream && (
-              <div className="absolute inset-0 flex items-center justify-center bg-slate-900/90">
+              <div className="absolute inset-0 flex items-center justify-center bg-slate-900/90 pointer-events-none">
                 <div className="text-center">
                   <div className="inline-flex items-center justify-center w-20 h-20 bg-slate-800 rounded-3xl mb-4">
                     <svg className="w-10 h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
