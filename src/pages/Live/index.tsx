@@ -164,99 +164,103 @@ export default function LivePage() {
         </div>
       </header>
 
-      <div className="container mx-auto p-4">
+      <div className="container mx-auto p-4 max-w-6xl">
         {/* 主内容区 */}
-        <div className="flex flex-col lg:flex-row gap-4">
+        <div className="flex flex-col gap-4">
           {/* 视频播放区域 */}
-          <div className="flex-1 min-w-0">
-            {/* 视频容器 */}
-            <div className="relative bg-black rounded-2xl overflow-hidden aspect-video shadow-2xl shadow-black/50 ring-1 ring-slate-700/50">
-              {/* 视频播放器 */}
-              <VideoPlayer hlsUrl={hlsUrl} hasStream={hasStream} />
+          <div className="relative bg-black rounded-2xl overflow-hidden aspect-video shadow-2xl shadow-black/50 ring-1 ring-slate-700/50">
+            {/* 视频播放器 */}
+            <VideoPlayer hlsUrl={hlsUrl} hasStream={hasStream} />
 
-              {/* 弹幕层（覆盖在视频上） */}
-              <DanmakuLayer />
+            {/* 弹幕层（覆盖在视频上） */}
+            <DanmakuLayer />
 
-              {/* 直播状态徽章 */}
-              <div className={`absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-sm transition-all ${
-                hasStream
-                  ? 'bg-red-500/90'
-                  : 'bg-gray-600/80'
-              }`}>
-                <span className={`w-2 h-2 rounded-full ${hasStream ? 'bg-white animate-pulse' : 'bg-gray-400'}`}></span>
-                <span className="text-sm font-medium text-white">
-                  {hasStream ? '直播中' : '未开播'}
-                </span>
-              </div>
-
-              {/* 观看人数 */}
-              {viewerCount > 0 && (
-                <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-slate-900/80 backdrop-blur-sm rounded-full">
-                  <svg className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
-                  </svg>
-                  <span className="text-sm text-gray-300">{viewerCount}</span>
-                </div>
-              )}
-
-              {/* 未开播提示 */}
-              {!hasStream && (
-                <div className="absolute inset-0 flex items-center justify-center bg-slate-900/90">
-                  <div className="text-center">
-                    <div className="inline-flex items-center justify-center w-20 h-20 bg-slate-800 rounded-3xl mb-4">
-                      <svg className="w-10 h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <h2 className="text-xl font-bold text-gray-300 mb-2">暂无直播</h2>
-                    <p className="text-gray-500 text-sm">等待管理员开始直播</p>
-                    <p className="text-gray-600 text-xs mt-2">可以在下方聊天区与其他用户互动</p>
-                  </div>
-                </div>
-              )}
+            {/* 直播状态徽章 */}
+            <div className={`absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-sm transition-all ${
+              hasStream
+                ? 'bg-red-500/90'
+                : 'bg-gray-600/80'
+            }`}>
+              <span className={`w-2 h-2 rounded-full ${hasStream ? 'bg-white animate-pulse' : 'bg-gray-400'}`}></span>
+              <span className="text-sm font-medium text-white">
+                {hasStream ? '直播中' : '未开播'}
+              </span>
             </div>
 
-            {/* 直播控制栏 */}
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 px-2">
-              <div className="flex items-center gap-4">
-                <div className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
-                  hasStream
-                    ? 'bg-red-500/10'
-                    : 'bg-slate-800/50'
-                }`}>
-                  <span className={`w-2 h-2 rounded-full ${hasStream ? 'bg-red-500 animate-pulse' : 'bg-gray-500'}`}></span>
-                  <span className="text-sm text-gray-300">
-                    {hasStream ? '直播中' : '未开播'}
-                  </span>
-                </div>
-
-                {/* 在线用户头像显示 */}
-                <OnlineUsersDisplay
-                  roomId={ROOM_ID}
-                  config={{ mode: 'avatars', maxDisplay: 5, showRole: false, showActivity: true }}
-                />
-              </div>
-
-              <button
-                onClick={toggleDanmaku}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
-                  showDanmaku
-                    ? 'bg-amber-500 text-white hover:bg-amber-600'
-                    : 'bg-slate-800 text-gray-300 hover:bg-slate-700'
-                }`}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            {/* 观看人数 */}
+            {viewerCount > 0 && (
+              <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-slate-900/80 backdrop-blur-sm rounded-full">
+                <svg className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
                 </svg>
-                <span className="text-sm">{showDanmaku ? '隐藏弹幕' : '显示弹幕'}</span>
-              </button>
-            </div>
+                <span className="text-sm text-gray-300">{viewerCount}</span>
+              </div>
+            )}
+
+            {/* 未开播提示 */}
+            {!hasStream && (
+              <div className="absolute inset-0 flex items-center justify-center bg-slate-900/90">
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-20 h-20 bg-slate-800 rounded-3xl mb-4">
+                    <svg className="w-10 h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-300 mb-2">暂无直播</h2>
+                  <p className="text-gray-500 text-sm">等待管理员开始直播</p>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* 侧边栏 - 聊天输入 + 弹幕历史 */}
-          <div className="w-full lg:w-80 flex flex-col gap-4">
-            <ChatInput roomId={ROOM_ID} />
-            <ChatHistory maxDisplay={100} showTimestamp autoScroll />
+          {/* 控制栏和输入区 */}
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* 左侧：状态显示和弹幕输入 */}
+            <div className="flex-1 flex flex-col gap-4">
+              {/* 直播控制栏 */}
+              <div className="flex flex-wrap items-center justify-between gap-3 px-2">
+                <div className="flex items-center gap-4">
+                  <div className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
+                    hasStream
+                      ? 'bg-red-500/10'
+                      : 'bg-slate-800/50'
+                  }`}>
+                    <span className={`w-2 h-2 rounded-full ${hasStream ? 'bg-red-500 animate-pulse' : 'bg-gray-500'}`}></span>
+                    <span className="text-sm text-gray-300">
+                      {hasStream ? '直播中' : '未开播'}
+                    </span>
+                  </div>
+
+                  {/* 在线用户头像显示 */}
+                  <OnlineUsersDisplay
+                    roomId={ROOM_ID}
+                    config={{ mode: 'avatars', maxDisplay: 5, showRole: false, showActivity: true }}
+                  />
+                </div>
+
+                <button
+                  onClick={toggleDanmaku}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
+                    showDanmaku
+                      ? 'bg-amber-500 text-white hover:bg-amber-600'
+                      : 'bg-slate-800 text-gray-300 hover:bg-slate-700'
+                  }`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  <span className="text-sm">{showDanmaku ? '隐藏弹幕' : '显示弹幕'}</span>
+                </button>
+              </div>
+
+              {/* 弹幕输入框 */}
+              <ChatInput roomId={ROOM_ID} />
+            </div>
+
+            {/* 右侧：弹幕历史 */}
+            <div className="w-full lg:w-80 flex-shrink-0">
+              <ChatHistory maxDisplay={100} showTimestamp autoScroll={false} />
+            </div>
           </div>
         </div>
       </div>

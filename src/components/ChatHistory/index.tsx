@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useDanmakuStore } from '../../store';
 // import type { Danmaku } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
@@ -14,6 +14,7 @@ interface ChatHistoryProps {
  * ChatHistory - 弹幕历史记录（瀑布流聊天框）
  *
  * 显示从登录开始收到的所有弹幕，使用聊天界面样式
+ * 智能滚动：只有当用户在底部附近时才会自动滚动
  */
 export function ChatHistory({
   maxDisplay = 100,
@@ -23,13 +24,46 @@ export function ChatHistory({
   const { danmakuList } = useDanmakuStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const lastDanmakuRef = useRef<HTMLDivElement>(null);
+  const [isNearBottom, setIsNearBottom] = useState(true);
+  const prevDanmakuLength = useRef(danmakuList.length);
 
-  // 自动滚动到底部
+  // 检测是否靠近底部（100px 以内）
+  const checkIsNearBottom = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return true;
+    const threshold = 100;
+    return container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
+  }, []);
+
+  // 监听滚动事件，更新 isNearBottom 状态
   useEffect(() => {
-    if (autoScroll && lastDanmakuRef.current) {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      setIsNearBottom(checkIsNearBottom());
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [checkIsNearBottom]);
+
+  // 智能自动滚动：只在用户靠近底部且有新弹幕时滚动
+  useEffect(() => {
+    const hasNewDanmaku = danmakuList.length > prevDanmakuLength.current;
+    if (autoScroll && hasNewDanmaku && isNearBottom && lastDanmakuRef.current) {
       lastDanmakuRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [danmakuList, autoScroll]);
+    prevDanmakuLength.current = danmakuList.length;
+  }, [danmakuList, autoScroll, isNearBottom]);
+
+  // 手动滚动到底部
+  const scrollToBottom = useCallback(() => {
+    if (lastDanmakuRef.current) {
+      lastDanmakuRef.current.scrollIntoView({ behavior: 'smooth' });
+      setIsNearBottom(true);
+    }
+  }, []);
 
   // 只显示最近的 N 条弹幕
   const displayList = danmakuList.slice(-maxDisplay);
@@ -86,7 +120,7 @@ export function ChatHistory({
   }
 
   return (
-    <div className="bg-slate-800/90 backdrop-blur-sm rounded-2xl overflow-hidden flex flex-col h-[500px]">
+    <div className="bg-slate-800/90 backdrop-blur-sm rounded-2xl overflow-hidden flex flex-col h-[500px] relative">
       {/* 头部 */}
       <div className="px-4 py-3 border-b border-slate-700/50 flex-shrink-0">
         <div className="flex items-center justify-between">
@@ -156,6 +190,20 @@ export function ChatHistory({
 
       {/* 底部渐变 */}
       <div className="h-4 bg-gradient-to-t from-slate-800 to-transparent flex-shrink-0"></div>
+
+      {/* 滚动到底部按钮（当用户向上滚动时显示） */}
+      {!isNearBottom && (
+        <button
+          onClick={scrollToBottom}
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-full shadow-lg transition-all transform hover:scale-105"
+          title="回到底部"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+          </svg>
+          <span>有新消息</span>
+        </button>
+      )}
     </div>
   );
 }

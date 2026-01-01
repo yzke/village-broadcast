@@ -26,3 +26,7 @@ dist-ssr
 
 tmp/
 Makefile
+
+# Environment variables
+.env.production
+.env.local
