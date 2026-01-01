@@ -102,7 +102,7 @@ export default function LivePage() {
               </svg>
             </div>
             <div>
-              <h1 className="text-lg font-bold text-white">村庄广播</h1>
+              <h1 className="text-lg font-bold text-white">内阁宣传</h1>
               <p className="text-xs text-gray-400">Village Broadcast</p>
             </div>
           </div>

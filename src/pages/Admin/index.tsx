@@ -106,7 +106,7 @@ export default function AdminPage() {
             </div>
             <div>
               <h1 className="text-lg font-bold text-gray-800">管理后台</h1>
-              <p className="text-xs text-gray-500">村庄广播</p>
+              <p className="text-xs text-gray-500">内阁宣传</p>
             </div>
           </div>
 

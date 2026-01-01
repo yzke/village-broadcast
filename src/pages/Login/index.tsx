@@ -124,9 +124,9 @@ export default function LoginPage() {
                 </svg>
               </div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                村庄广播
+                大明内阁放映厅
               </h1>
-              <p className="text-gray-500 mt-1">连接邻里，共享美好时光</p>
+              <p className="text-gray-500 mt-1">小阁老，今天要抄谁的家?</p>
             </div>
 
             {/* 错误提示 */}
@@ -143,7 +143,7 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  用户名
+                  阁员者谁
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -156,7 +156,7 @@ export default function LoginPage() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
-                    placeholder="请输入用户名"
+                    placeholder="官人请输入身份"
                     required
                   />
                 </div>
@@ -164,7 +164,7 @@ export default function LoginPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  密码
+                  入阁暗号
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -219,7 +219,7 @@ export default function LoginPage() {
                     处理中...
                   </span>
                 ) : (
-                  isLogin ? '登录' : '注册'
+                  isLogin ? '进阁' : '买官'
                 )}
               </button>
             </form>
@@ -234,7 +234,7 @@ export default function LoginPage() {
                 }}
                 className="text-amber-600 hover:text-amber-700 font-medium transition-colors"
               >
-                {isLogin ? '没有账号？立即注册' : '已有账号？去登录'}
+                {isLogin ? '还没官职？立即买官' : '已有官职？入阁看看'}
               </button>
             </div>
 
@@ -268,7 +268,7 @@ export default function LoginPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
-                游客观看
+                微服私访
               </button>
             )}
           </div>
@@ -276,7 +276,7 @@ export default function LoginPage() {
           {/* 底部装饰 */}
           <div className="px-8 py-4 bg-gradient-to-r from-amber-50 to-orange-50 border-t border-gray-100">
             <p className="text-xs text-center text-gray-500">
-              村庄广播 - 让声音传递温暖
+              别让小阁老知会
             </p>
           </div>
         </div>
