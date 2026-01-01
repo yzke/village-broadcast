@@ -1,11 +1,12 @@
 import express from 'express';
+import fs from 'fs'; // 【修复点1】必须在顶部引入，不能在函数里 require
 import bcrypt from 'bcryptjs';
 import { userQueries, streamQueries, generateStreamKey } from './db.js';
 import { generateToken, authMiddleware, adminMiddleware } from './middleware.js';
 
 const router = express.Router();
 
-// ==================== 用户认证路由 ====================
+// ==================== 用户认证路由 (保持原样) ====================
 
 // POST /api/auth/login - 用户登录
 router.post('/auth/login', (req, res) => {
@@ -116,7 +117,7 @@ router.get('/auth/me', authMiddleware, (req, res) => {
   });
 });
 
-// ==================== 用户信息管理 ====================
+// ==================== 用户信息管理 (保持原样) ====================
 
 // PUT /api/user/password - 修改密码
 router.put('/user/password', authMiddleware, (req, res) => {
@@ -187,33 +188,60 @@ router.put('/user/profile', authMiddleware, (req, res) => {
   });
 });
 
-// ==================== 直播相关路由 ====================
+// ==================== 直播相关路由 (此处已修复) ====================
 
 // GET /api/stream/status - 获取直播状态
 router.get('/stream/status', (req, res) => {
-  // 这里可以连接 nginx-rtmp 的统计接口获取真实状态
-  // 简单实现：检查 HLS 文件是否存在
-  const fs = require('fs');
-  const hlsPath = process.env.HLS_PATH || '/var/lib/nginx/hls';
+  // 【修复点2】修正路径，对应 Nginx 的 hls_path
+  const hlsPath = process.env.HLS_PATH || '/tmp/hls';
 
   let isLive = false;
   let viewerCount = 0;
+  
+  // 即使没直播，也默认告诉前端名字叫 live，防止前端拿到 null 报错
+  let streamName = 'live'; 
 
   try {
-    const files = fs.readdirSync(hlsPath);
-    const m3u8Files = files.filter(f => f.endsWith('.m3u8'));
-    isLive = m3u8Files.length > 0;
+    const config = streamQueries.getStreamKey();
+    
+    if (config && config.stream_key) {
+        // 这是真实的推流文件名 (例如 sk_abc123.m3u8)
+        const currentKey = config.stream_key;
+        const realFile = `${currentKey}.m3u8`;
+        const fullPath = `${hlsPath}/${realFile}`;
+
+        // 检查真实文件是否存在
+        if (fs.existsSync(fullPath)) {
+            isLive = true;
+            
+            // 【修复点6】前端写死了只认 live.m3u8
+            // 所以我们自动创建一个快捷方式：live.m3u8 -> 真实密钥.m3u8
+            const fakeLink = `${hlsPath}/live.m3u8`;
+            try {
+                // 如果已存在旧的，先删除
+                if (fs.existsSync(fakeLink)) {
+                    fs.unlinkSync(fakeLink);
+                }
+                // 创建新的软链接
+                fs.symlinkSync(realFile, fakeLink);
+            } catch (e) {
+                // 忽略创建失败的错误（可能是权限问题），不影响 API 返回
+                console.error('创建快捷方式失败:', e.message);
+            }
+        }
+    }
   } catch (err) {
+    console.error('检查直播状态出错:', err);
     isLive = false;
   }
 
-  // TODO: 从弹幕服务获取在线人数
+  // 返回给前端
   res.json({
     success: true,
     data: {
       isLive,
       viewerCount,
-      streamName: 'live',
+      streamName: 'live', // 这里直接返回 'live'，配合上面的快捷方式
       startedAt: isLive ? new Date().toISOString() : null
     }
   });
@@ -223,12 +251,20 @@ router.get('/stream/status', (req, res) => {
 router.get('/stream/config', authMiddleware, adminMiddleware, (req, res) => {
   const config = streamQueries.getStreamKey();
 
+  // 【修复点3】获取纯净 IP（去掉可能存在的端口号）
+  const hostHeader = req.headers.host || '47.117.70.135';
+  const serverIp = hostHeader.split(':')[0]; 
+
   res.json({
     success: true,
     data: {
-      rtmpUrl: `rtmp://${req.headers.host || '47.117.70.135'}:1935/live`,
+      // 这里的 /live 是 Nginx 里的 application 名字
+      rtmpUrl: `rtmp://${serverIp}:1935/live`,
+      
       streamKey: config.stream_key,
-      hlsUrl: `http://${req.headers.host || '47.117.70.135'}:8030/live/live.m3u8`
+      
+      // 这里的端口是 8030，且文件名统一用 live.m3u8
+      hlsUrl: `http://${serverIp}:8030/live/live.m3u8`
     }
   });
 });
@@ -242,6 +278,26 @@ router.post('/stream/refresh-key', authMiddleware, adminMiddleware, (req, res) =
     success: true,
     data: { streamKey: newKey }
   });
+});
+
+// 【修复点4】新增：Nginx 推流鉴权回调
+router.post('/stream/on-publish', (req, res) => {
+    // Nginx 把推流码放在 'name' 里传过来
+    const incomingKey = req.body.name;
+    const config = streamQueries.getStreamKey();
+    
+    console.log(`[RTMP鉴权] 尝试推流: ${incomingKey}`);
+
+    if (config && incomingKey === config.stream_key) {
+        res.status(200).send('OK');
+    } else {
+        res.status(403).send('Forbidden');
+    }
+});
+
+// 防止 Nginx 报错 404 (可选)
+router.post('/stream/on-done', (req, res) => {
+    res.status(200).send('OK');
 });
 
 export default router;
