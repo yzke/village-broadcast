@@ -59,6 +59,8 @@ export interface StreamStatus {
   isLive: boolean;
   viewerCount: number;
   streamName?: string;
+  streamKey?: string;  // 当前活跃的 streamKey
+  hlsUrl?: string;     // 动态生成的 HLS 播放地址
   startedAt?: string;
 }
 

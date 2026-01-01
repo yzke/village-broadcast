@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserStore, useStreamStore, useDanmakuStore } from '../../store';
 import { socketService } from '../../services/socket';
-import { checkStreamAvailable, getHlsUrl } from '../../services/api';
+import { getStreamStatus } from '../../services/api';
 import VideoPlayer from '../../components/VideoPlayer';
 import DanmakuLayer from '../../components/Danmaku';
 import ChatInput from '../../components/ChatInput';
@@ -14,7 +14,6 @@ const ROOM_ID = 'live';
 export default function LivePage() {
   const navigate = useNavigate();
   const { user, logout } = useUserStore();
-  // const { isLive, viewerCount, setStreamStatus, resetStream } = useStreamStore();
   const { viewerCount, setStreamStatus, resetStream } = useStreamStore();
   const { showDanmaku, toggleDanmaku } = useDanmakuStore();
 
@@ -22,21 +21,31 @@ export default function LivePage() {
   const [hlsUrl, setHlsUrl] = useState<string>('');
   const [hasStream, setHasStream] = useState(false);
 
-  // 检查直播状态
+  // 检查直播状态 - 从 API 获取动态播放地址
   const checkStreamStatus = useCallback(async () => {
-    const available = await checkStreamAvailable();
-    if (available) {
-      setHlsUrl(getHlsUrl());
-      setHasStream(true);
-      setStreamStatus({
-        isLive: true,
-        viewerCount: 0,
-        streamName: ROOM_ID,
-      });
-    } else {
+    try {
+      const response = await getStreamStatus();
+      if (response.success && response.data) {
+        const { isLive, hlsUrl: apiUrl } = response.data;
+
+        if (isLive && apiUrl) {
+          setHlsUrl(apiUrl);  // 使用 API 返回的动态地址
+          setHasStream(true);
+          setStreamStatus({
+            isLive: true,
+            viewerCount: response.data.viewerCount || 0,
+            streamName: response.data.streamName ?? ROOM_ID,
+          });
+        } else {
+          setHasStream(false);
+          setHlsUrl('');
+          resetStream();
+        }
+      }
+    } catch (err) {
+      console.error('检查直播状态失败:', err);
       setHasStream(false);
       setHlsUrl('');
-      resetStream();
     }
   }, []);
 
@@ -70,9 +79,10 @@ export default function LivePage() {
     // 监听直播状态变化
     const unsubscribeStatus = socketService.onStreamStatus((status) => {
       setStreamStatus(status);
+      // Socket.io 返回的状态可能不包含 hlsUrl，需要重新获取
       if (status.isLive) {
         setHasStream(true);
-        setHlsUrl(getHlsUrl());
+        checkStreamStatus();  // 重新检查获取完整的 HLS URL
       }
     });
 

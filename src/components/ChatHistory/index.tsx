@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useDanmakuStore } from '../../store';
-// import type { Danmaku } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 
@@ -11,10 +10,10 @@ interface ChatHistoryProps {
 }
 
 /**
- * ChatHistory - 弹幕历史记录（瀑布流聊天框）
+ * ChatHistory - 弹幕历史记录（栈式瀑布流）
  *
- * 显示从登录开始收到的所有弹幕，使用聊天界面样式
- * 智能滚动：只有当用户在底部附近时才会自动滚动
+ * 最新弹幕显示在顶部，采用紧凑的栈式布局
+ * 智能滚动：只有当用户在顶部附近时才会自动滚动
  */
 export function ChatHistory({
   maxDisplay = 100,
@@ -23,50 +22,48 @@ export function ChatHistory({
 }: ChatHistoryProps) {
   const { danmakuList } = useDanmakuStore();
   const containerRef = useRef<HTMLDivElement>(null);
-  const lastDanmakuRef = useRef<HTMLDivElement>(null);
-  const [isNearBottom, setIsNearBottom] = useState(true);
+  const firstDanmakuRef = useRef<HTMLDivElement>(null);
+  const [isNearTop, setIsNearTop] = useState(true);
   const prevDanmakuLength = useRef(danmakuList.length);
 
-  // 检测是否靠近底部（100px 以内）
-  const checkIsNearBottom = useCallback(() => {
+  // 检测是否靠近顶部（100px 以内）
+  const checkIsNearTop = useCallback(() => {
     const container = containerRef.current;
     if (!container) return true;
-    const threshold = 100;
-    return container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
+    return container.scrollTop < 100;
   }, []);
 
-  // 监听滚动事件，更新 isNearBottom 状态
+  // 监听滚动事件，更新 isNearTop 状态
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const handleScroll = () => {
-      setIsNearBottom(checkIsNearBottom());
+      setIsNearTop(checkIsNearTop());
     };
 
     container.addEventListener('scroll', handleScroll);
     return () => container.removeEventListener('scroll', handleScroll);
-  }, [checkIsNearBottom]);
+  }, [checkIsNearTop]);
 
-  // 智能自动滚动：只在用户靠近底部且有新弹幕时滚动
+  // 智能自动滚动：只在用户靠近顶部且有新弹幕时滚动到顶部
   useEffect(() => {
     const hasNewDanmaku = danmakuList.length > prevDanmakuLength.current;
-    if (autoScroll && hasNewDanmaku && isNearBottom && lastDanmakuRef.current) {
-      lastDanmakuRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (autoScroll && hasNewDanmaku && isNearTop) {
+      // 滚动到顶部
+      containerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     }
     prevDanmakuLength.current = danmakuList.length;
-  }, [danmakuList, autoScroll, isNearBottom]);
+  }, [danmakuList, autoScroll, isNearTop]);
 
-  // 手动滚动到底部
-  const scrollToBottom = useCallback(() => {
-    if (lastDanmakuRef.current) {
-      lastDanmakuRef.current.scrollIntoView({ behavior: 'smooth' });
-      setIsNearBottom(true);
-    }
+  // 手动滚动到顶部
+  const scrollToTop = useCallback(() => {
+    containerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    setIsNearTop(true);
   }, []);
 
-  // 只显示最近的 N 条弹幕
-  const displayList = danmakuList.slice(-maxDisplay);
+  // 只显示最近的 N 条弹幕，并反转顺序（最新在前）
+  const displayList = danmakuList.slice(-maxDisplay).reverse();
 
   // 获取角色对应的样式
   const getRoleStyle = (role: string) => {
@@ -96,9 +93,9 @@ export function ChatHistory({
     return (
       <div className="bg-slate-800/90 backdrop-blur-sm rounded-2xl overflow-hidden">
         {/* 头部 */}
-        <div className="px-4 py-3 border-b border-slate-700/50">
-          <h3 className="font-semibold text-white flex items-center gap-2">
-            <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="px-3 py-2.5 border-b border-slate-700/50">
+          <h3 className="font-semibold text-white flex items-center gap-2 text-sm">
+            <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
             弹幕记录
@@ -106,13 +103,13 @@ export function ChatHistory({
         </div>
 
         {/* 空状态 */}
-        <div className="p-8 text-center">
-          <div className="w-16 h-16 mx-auto mb-4 bg-slate-700/50 rounded-2xl flex items-center justify-center">
-            <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="p-6 text-center">
+          <div className="w-12 h-12 mx-auto mb-3 bg-slate-700/50 rounded-2xl flex items-center justify-center">
+            <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
           </div>
-          <p className="text-gray-500 text-sm">暂无弹幕</p>
+          <p className="text-gray-500 text-xs">暂无弹幕</p>
           <p className="text-gray-600 text-xs mt-1">发送第一条弹幕吧！</p>
         </div>
       </div>
@@ -122,10 +119,10 @@ export function ChatHistory({
   return (
     <div className="bg-slate-800/90 backdrop-blur-sm rounded-2xl overflow-hidden flex flex-col h-[500px] relative">
       {/* 头部 */}
-      <div className="px-4 py-3 border-b border-slate-700/50 flex-shrink-0">
+      <div className="px-3 py-2.5 border-b border-slate-700/50 flex-shrink-0">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-white flex items-center gap-2">
-            <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <h3 className="font-semibold text-white flex items-center gap-2 text-sm">
+            <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
             弹幕记录
@@ -134,10 +131,13 @@ export function ChatHistory({
         </div>
       </div>
 
-      {/* 消息列表（瀑布流） */}
+      {/* 顶部渐变（表示上面是最新的） */}
+      <div className="h-3 bg-gradient-to-b from-amber-500/10 to-transparent flex-shrink-0"></div>
+
+      {/* 消息列表（栈式布局，最新在顶部） */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-y-auto p-4 space-y-3"
+        className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5"
         style={{
           scrollbarWidth: 'thin',
           scrollbarColor: 'rgb(51 65 85) transparent',
@@ -146,13 +146,13 @@ export function ChatHistory({
         {displayList.map((danmaku, index) => (
           <div
             key={danmaku.id}
-            ref={index === displayList.length - 1 ? lastDanmakuRef : null}
-            className="flex gap-3 animate-in slide-in-from-bottom-2 duration-300"
-            style={{ animationDelay: `${Math.min(index * 50, 500)}ms` }}
+            ref={index === 0 ? firstDanmakuRef : null}
+            className="flex gap-2 animate-in slide-in-from-top-2 duration-300"
+            style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
           >
-            {/* 头像 */}
+            {/* 头像 - 更小 */}
             <div className="flex-shrink-0">
-              <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-amber-400 to-orange-500">
+              <div className="w-6 h-6 rounded-full overflow-hidden bg-gradient-to-br from-amber-400 to-orange-500">
                 <div className="w-full h-full flex items-center justify-center text-xs font-bold text-white">
                   {danmaku.user.nickname.charAt(0).toUpperCase()}
                 </div>
@@ -162,11 +162,11 @@ export function ChatHistory({
             {/* 消息内容 */}
             <div className="flex-1 min-w-0">
               {/* 用户名和时间 */}
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-sm font-medium text-gray-300">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <span className="text-xs font-medium text-gray-300">
                   {danmaku.user.nickname}
                 </span>
-                <span className={`px-1.5 py-0.5 text-xs rounded-full border ${getRoleStyle(danmaku.user.role)}`}>
+                <span className={`px-1 py-0.5 text-xs rounded-full border ${getRoleStyle(danmaku.user.role)}`}>
                   {getRoleName(danmaku.user.role)}
                 </span>
                 {showTimestamp && danmaku.timestamp && (
@@ -179,8 +179,8 @@ export function ChatHistory({
                 )}
               </div>
 
-              {/* 弹幕文本（统一样式） */}
-              <div className="text-gray-200 break-words">
+              {/* 弹幕文本 */}
+              <div className="text-gray-200 break-words text-xs leading-relaxed">
                 {danmaku.text}
               </div>
             </div>
@@ -189,17 +189,17 @@ export function ChatHistory({
       </div>
 
       {/* 底部渐变 */}
-      <div className="h-4 bg-gradient-to-t from-slate-800 to-transparent flex-shrink-0"></div>
+      <div className="h-3 bg-gradient-to-t from-slate-800 to-transparent flex-shrink-0"></div>
 
-      {/* 滚动到底部按钮（当用户向上滚动时显示） */}
-      {!isNearBottom && (
+      {/* 滚动到顶部按钮（当用户向下滚动时显示） */}
+      {!isNearTop && (
         <button
-          onClick={scrollToBottom}
-          className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-full shadow-lg transition-all transform hover:scale-105"
-          title="回到底部"
+          onClick={scrollToTop}
+          className="absolute top-12 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium rounded-full shadow-lg transition-all transform hover:scale-105"
+          title="返回最新"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
           </svg>
           <span>有新消息</span>
         </button>

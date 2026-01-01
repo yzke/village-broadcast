@@ -226,9 +226,9 @@ router.get('/stream/config', authMiddleware, adminMiddleware, (req, res) => {
   res.json({
     success: true,
     data: {
-      rtmpUrl: `rtmp://${req.headers.host || '192.168.5.100'}:1935/live`,
+      rtmpUrl: `rtmp://${req.headers.host || '47.117.70.135'}:1935/live`,
       streamKey: config.stream_key,
-      hlsUrl: `http://${req.headers.host || '192.168.5.100'}:8030/live/live.m3u8`
+      hlsUrl: `http://${req.headers.host || '47.117.70.135'}:8030/live/live.m3u8`
     }
   });
 });
