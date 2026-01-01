@@ -58,6 +58,15 @@ export async function initDatabase() {
     )
   `);
 
+  // 创建默认推流密钥（如果不存在）
+  const streamKeyResult = db.exec('SELECT * FROM stream_config WHERE id = 1');
+  if (!streamKeyResult.length || streamKeyResult[0].values.length === 0) {
+    const defaultStreamKey = generateStreamKey();
+    db.run('INSERT INTO stream_config (id, stream_key) VALUES (1, ?)', [defaultStreamKey]);
+    console.log('默认推流密钥已创建:', defaultStreamKey);
+    saveDatabase();
+  }
+
   // 创建默认管理员账户（如果不存在）
   const adminResult = db.exec('SELECT * FROM users WHERE username = "admin"');
 
